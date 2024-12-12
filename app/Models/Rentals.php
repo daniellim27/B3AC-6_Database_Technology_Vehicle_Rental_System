@@ -9,7 +9,7 @@ class Rentals extends Model
     protected $table = 'rentals';
     protected $primaryKey = 'rental_id';
     protected $useAutoIncrement = false;
-    protected $returnType       = 'object';
+    protected $returnType = 'object';
     protected $allowedFields = [
         'rental_id',
         'customer_id',
@@ -29,7 +29,7 @@ class Rentals extends Model
         'employee_id' => 'required|numeric',
         'rental_status_code' => 'required|numeric',
         'rental_date' => 'required|valid_date',
-        'return_date' => 'permit_empty|valid_date',
+        'return_date' => 'permit_empty|valid_date|callback_validateReturnDate[rental_date]',
         'total_rental_cost' => 'permit_empty|numeric'
     ];
 
@@ -66,12 +66,29 @@ class Rentals extends Model
             'valid_date' => 'Invalid rental date'
         ],
         'return_date' => [
-            'valid_date' => 'Invalid return date'
+            'valid_date' => 'Invalid return date',
+            'validateReturnDate' => 'The return date must be greater than the rental date.'
         ],
         'total_rental_cost' => [
             'numeric' => 'Total rental cost must be numeric'
         ]
     ];
+
+    // Custom validation method to check return date
+    public function validateReturnDate(string $returnDate, string $rentalDateField, array $data): bool
+    {
+        if (empty($returnDate)) {
+            return true; // Return date is not mandatory, so skip validation if empty
+        }
+
+        $rentalDate = $data[$rentalDateField] ?? null;
+
+        if (!$rentalDate || strtotime($returnDate) > strtotime($rentalDate)) {
+            return true;
+        }
+
+        return false;
+    }
 
     // Get rental with related data
     public function getRental($id = null)
